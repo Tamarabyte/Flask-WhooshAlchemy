@@ -159,7 +159,7 @@ class _Searcher(object):
 
         group = OrGroup if or_ else AndGroup
         parser = MultifieldParser(fields, self._index.schema, group=group, fieldboosts=fieldboosts)
-        return self._index.searcher().search(parser.parse(query),
+        return self._index.searcher(weighting=Frequency).search(parser.parse(query),
                 limit=limit)
 
 
