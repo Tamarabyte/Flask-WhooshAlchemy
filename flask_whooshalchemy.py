@@ -81,8 +81,8 @@ class _QueryProxy(flask_sqlalchemy.BaseQuery):
             # Whoosh
 
             heapq.heappush(ordered_by_whoosh_rank,
-                (self._whoosh_rank[unicode(getattr(row,
-                    self._primary_key_name))], row))
+                # (rank [row primary key name], row)
+                (self._whoosh_rank[unicode(getattr(row, self._primary_key_name))], row))
 
         def _inner():
             while ordered_by_whoosh_rank:
@@ -90,7 +90,7 @@ class _QueryProxy(flask_sqlalchemy.BaseQuery):
 
         return _inner()
 
-    def whoosh_search(self, query, limit=None, fields=None, or_=False):
+    def whoosh_search(self, query, limit=None, fields=None, or_=False, fieldboost=None):
         '''
 
         Execute text query on database. Results have a text-based
@@ -113,7 +113,7 @@ class _QueryProxy(flask_sqlalchemy.BaseQuery):
         if not isinstance(query, unicode):
             query = unicode(query)
 
-        results = self._whoosh_searcher(query, limit, fields, or_)
+        results = self._whoosh_searcher(query, limit, fields, or_, fieldboost)
 
         if not results:
             # We don't want to proceed with empty results because we get a
@@ -143,20 +143,22 @@ class _QueryProxy(flask_sqlalchemy.BaseQuery):
 class _Searcher(object):
     ''' Assigned to a Model class as ``pure_search``, which enables
     text-querying to whoosh hit list. Also used by ``query.whoosh_search``'''
-
     def __init__(self, primary, indx):
         self.primary_key_name = primary
         self._index = indx
+        
         self.searcher = indx.searcher()
         self._all_fields = list(set(indx.schema._fields.keys()) -
                 set([self.primary_key_name]))
 
-    def __call__(self, query, limit=None, fields=None, or_=False):
+    # fieldboost - a dictionary containing ranking multipliers to apply to fields
+    # reorder - whether or not to reorder based on whoosh ranking
+    def __call__(self, query, limit=None, fields=None, or_=False, fieldboost=None):
         if fields is None:
             fields = self._all_fields
 
         group = OrGroup if or_ else AndGroup
-        parser = MultifieldParser(fields, self._index.schema, group=group)
+        parser = MultifieldParser(fields, self._index.schema, group=group, fieldboost=fieldboost)
         return self._index.searcher().search(parser.parse(query),
                 limit=limit)
 
