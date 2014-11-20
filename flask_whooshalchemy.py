@@ -23,6 +23,7 @@ from whoosh.qparser import OrGroup
 from whoosh.qparser import AndGroup
 from whoosh.qparser import MultifieldParser
 from whoosh.analysis import StemmingAnalyzer
+from whoosh.scoring import Frequency
 import whoosh.index
 from whoosh.fields import Schema
 #from whoosh.fields import ID, TEXT, KEYWORD, STORED
@@ -145,9 +146,8 @@ class _Searcher(object):
     text-querying to whoosh hit list. Also used by ``query.whoosh_search``'''
     def __init__(self, primary, indx):
         self.primary_key_name = primary
-        self._index = indx
-        
-        self.searcher = indx.searcher()
+        self._index = indx 
+        self.searcher = indx.searcher(weighting=Frequency)
         self._all_fields = list(set(indx.schema._fields.keys()) -
                 set([self.primary_key_name]))
 
