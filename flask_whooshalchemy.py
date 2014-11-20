@@ -67,7 +67,10 @@ class _QueryProxy(flask_sqlalchemy.BaseQuery):
 
         if self._whoosh_rank is None:
             # Whoosh search hasn't been run so behave as normal.
-
+            return super_iter
+        
+        # Don't reorder if order by has already been set
+        if self._order_by:
             return super_iter
 
         # Iterate through the values and re-order by whoosh relevance.
