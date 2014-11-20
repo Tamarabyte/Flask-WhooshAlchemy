@@ -90,7 +90,7 @@ class _QueryProxy(flask_sqlalchemy.BaseQuery):
 
         return _inner()
 
-    def whoosh_search(self, query, limit=None, fields=None, or_=False, fieldboost=None):
+    def whoosh_search(self, query, limit=None, fields=None, or_=False, fieldboosts=None):
         '''
 
         Execute text query on database. Results have a text-based
@@ -113,7 +113,7 @@ class _QueryProxy(flask_sqlalchemy.BaseQuery):
         if not isinstance(query, unicode):
             query = unicode(query)
 
-        results = self._whoosh_searcher(query, limit, fields, or_, fieldboost)
+        results = self._whoosh_searcher(query, limit, fields, or_, fieldboosts)
 
         if not results:
             # We don't want to proceed with empty results because we get a
@@ -153,12 +153,12 @@ class _Searcher(object):
 
     # fieldboost - a dictionary containing ranking multipliers to apply to fields
     # reorder - whether or not to reorder based on whoosh ranking
-    def __call__(self, query, limit=None, fields=None, or_=False, fieldboost=None):
+    def __call__(self, query, limit=None, fields=None, or_=False, fieldboosts=None):
         if fields is None:
             fields = self._all_fields
 
         group = OrGroup if or_ else AndGroup
-        parser = MultifieldParser(fields, self._index.schema, group=group, fieldboost=fieldboost)
+        parser = MultifieldParser(fields, self._index.schema, group=group, fieldboosts=fieldboosts)
         return self._index.searcher().search(parser.parse(query),
                 limit=limit)
 
